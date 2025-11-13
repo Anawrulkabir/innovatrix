@@ -12,15 +12,15 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo 'Checking out source code...'
-                checkout scm
+                sh 'pwd && ls -la'
             }
         }
         
         stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies...'
-                dir('app') {
-                    sh 'npm ci'
+                dir('/workspace/app') {
+                    sh 'npm install'
                 }
             }
         }
@@ -28,7 +28,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 echo 'Running unit tests...'
-                dir('app') {
+                dir('/workspace/app') {
                     sh 'npm test'
                 }
             }
@@ -49,7 +49,7 @@ pipeline {
             steps {
                 echo 'Building Docker image...'
                 script {
-                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                    sh "cd /workspace && docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
                     sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
                 }
             }
@@ -59,8 +59,8 @@ pipeline {
             steps {
                 echo 'Deploying application with Docker Compose...'
                 script {
-                    sh 'docker-compose down || true'
-                    sh 'docker-compose up -d'
+                    sh 'cd /workspace && docker-compose down || true'
+                    sh 'cd /workspace && docker-compose up -d'
                     sh 'sleep 10'
                 }
             }
@@ -139,8 +139,8 @@ pipeline {
         }
         failure {
             echo 'Pipeline failed! Check the logs for details.'
-            sh 'docker-compose logs --tail 50'
-            sh 'docker-compose down || true'
+            sh 'cd /workspace && docker-compose logs --tail 50'
+            sh 'cd /workspace && docker-compose down || true'
         }
     }
 }
