@@ -1,8 +1,15 @@
 const request = require('supertest');
 const { app, server } = require('./server');
 
+// Set test environment
+process.env.NODE_ENV = 'test';
+
 afterAll((done) => {
-  server.close(done);
+  if (server) {
+    server.close(done);
+  } else {
+    done();
+  }
 });
 
 describe('Demo App Tests', () => {
