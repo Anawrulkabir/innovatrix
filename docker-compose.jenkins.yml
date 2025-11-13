@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  jenkins:
+    build:
+      context: ./jenkins-docker
+      dockerfile: Dockerfile
+    container_name: jenkins
+    privileged: true
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - JENKINS_OPTS=--httpPort=8080
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/workspace
+    networks:
+      - jenkins-network
+
+  dind:
+    image: docker:dind
+    container_name: docker-dind
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    volumes:
+      - docker-certs-ca:/certs/ca
+      - docker-certs-client:/certs/client
+      - jenkins_home:/var/jenkins_home
+    networks:
+      - jenkins-network
+    expose:
+      - 2375
+      - 2376
+
+volumes:
+  jenkins_home:
+  docker-certs-ca:
+  docker-certs-client:
+
+networks:
+  jenkins-network:
+    driver: bridge
