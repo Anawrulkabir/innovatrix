@@ -1,0 +1,237 @@
+Started by user unknown or anonymous
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins
+ in /var/jenkins_home/workspace/demo-1@2
+[Pipeline] {
+[Pipeline] withEnv
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Checkout)
+[Pipeline] echo
+Checking out source code...
+[Pipeline] sh
++ pwd
+/var/jenkins_home/workspace/demo-1@2
++ ls -la
+total 8
+drwxr-sr-x 2 root jenkins 4096 Nov 13 18:00 .
+drwxr-sr-x 8 root jenkins 4096 Nov 13 18:00 ..
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Install Dependencies)
+[Pipeline] echo
+Installing dependencies...
+[Pipeline] dir
+Running in /workspace/app
+[Pipeline] {
+[Pipeline] sh
++ npm install
+
+up to date, audited 358 packages in 7s
+
+49 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+[Pipeline] }
+[Pipeline] // dir
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Run Tests)
+[Pipeline] echo
+Running unit tests...
+[Pipeline] dir
+Running in /workspace/app
+[Pipeline] {
+[Pipeline] sh
++ npm test
+
+> demo-app@1.0.0 test
+> jest --coverage --forceExit
+
+
+PASS ./server.test.js (22.127 s)
+  Demo App Tests
+    GET /
+      ✓ should return hello world message (1353 ms)
+    GET /health
+      ✓ should return healthy status (80 ms)
+    GET /unknown
+      ✓ should return 404 for unknown routes (133 ms)
+
+-----------|---------|----------|---------|---------|-------------------
+File       | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-----------|---------|----------|---------|---------|-------------------
+All files  |   81.81 |       75 |   66.66 |   81.81 |                   
+ server.js |   81.81 |       75 |   66.66 |   81.81 | 26-27             
+-----------|---------|----------|---------|---------|-------------------
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+Snapshots:   0 total
+Time:        26.691 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
+[Pipeline] }
+[Pipeline] // dir
+Post stage
+[Pipeline] echo
+Test stage completed
+
+[Pipeline] echo
+All tests passed!
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Build Docker Image)
+
+[Pipeline] echo
+Building Docker image...
+[Pipeline] script
+[Pipeline] {
+[Pipeline] sh
++ cd /workspace
++ docker build -t demo-app:2 .
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+
+Sending build context to Docker daemon  32.98MB
+
+Step 1/9 : FROM node:18-alpine
+ ---> c5914b9dd279
+Step 2/9 : WORKDIR /app
+ ---> Using cache
+ ---> 792555bae248
+Step 3/9 : COPY app/package*.json ./
+ ---> Using cache
+ ---> 4630aa3aa436
+Step 4/9 : RUN npm ci --only=production
+ ---> Using cache
+ ---> d08c6de76ad1
+Step 5/9 : COPY app/ .
+
+ ---> a6f4e509bf0b
+Step 6/9 : EXPOSE 3000
+ ---> Running in 5d44fcf70433
+ ---> Removed intermediate container 5d44fcf70433
+ ---> 50d52a9c10fd
+Step 7/9 : USER node
+ ---> Running in e50110ae6098
+ ---> Removed intermediate container e50110ae6098
+ ---> 073d6a50986b
+Step 8/9 : HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3   CMD node -e "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); })"
+
+ ---> Running in 9873aa916a3a
+ ---> Removed intermediate container 9873aa916a3a
+ ---> e3ced32711f4
+Step 9/9 : CMD ["node", "server.js"]
+ ---> Running in 42c33b92ca28
+
+ ---> Removed intermediate container 42c33b92ca28
+ ---> ea5cdf1474f8
+
+Successfully built ea5cdf1474f8
+Successfully tagged demo-app:2
+
+[Pipeline] sh
+
++ docker tag demo-app:2 demo-app:latest
+
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Deploy with Docker Compose)
+
+[Pipeline] echo
+Deploying application with Docker Compose...
+[Pipeline] script
+
+[Pipeline] {
+[Pipeline] sh
+
++ cd /workspace
++ docker-compose down
+
+time="2025-11-13T18:04:15Z" level=warning msg="/workspace/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+[Pipeline] sh
+
++ cd /workspace
++ docker-compose up -d
+time="2025-11-13T18:04:16Z" level=warning msg="/workspace/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Network workspace_app-network  Creating
+ Network workspace_app-network  Created
+ Container demo-app-container  Creating
+
+ Container demo-app-container  Error response from daemon: Conflict. The container name "/demo-app-container" is already in use by container "53dcc032c210fb635663489558af40c5a1ecbe131b7da5839685e297b49b7a46". You have to remove (or rename) that container to be able to reuse that name.
+Error response from daemon: Conflict. The container name "/demo-app-container" is already in use by container "53dcc032c210fb635663489558af40c5a1ecbe131b7da5839685e297b49b7a46". You have to remove (or rename) that container to be able to reuse that name.
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Health Check)
+Stage "Health Check" skipped due to earlier failure(s)
+[Pipeline] getContext
+[Pipeline] }
+
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Verify Deployment)
+Stage "Verify Deployment" skipped due to earlier failure(s)
+[Pipeline] getContext
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] echo
+Pipeline execution completed
+[Pipeline] sh
+
++ echo '=== Final Status ==='
+=== Final Status ===
++ docker ps -a
++ grep demo-app
+53dcc032c210   64c32ae431a9                    "docker-entrypoint.s…"   47 minutes ago   Exited (137) 4 minutes ago                                                      demo-app-container
++ echo 
+
++ echo '=== Docker Images ==='
+=== Docker Images ===
++ docker images
++ grep demo-app
+
+demo-app           2                 ea5cdf1474f8   34 seconds ago   157MB
+demo-app           3                 4b430f77d927   34 seconds ago   157MB
+demo-app           latest            4b430f77d927   34 seconds ago   157MB
+demo-app           1                 c63a9403bf55   9 minutes ago    157MB
+[Pipeline] echo
+Pipeline failed! Check the logs for details.
+[Pipeline] sh
+
++ cd /workspace
++ docker-compose logs --tail 50
+time="2025-11-13T18:04:24Z" level=warning msg="/workspace/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+
+[Pipeline] sh
++ cd /workspace
++ docker-compose down
+
+time="2025-11-13T18:04:25Z" level=warning msg="/workspace/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Network workspace_app-network  Removing
+ Network workspace_app-network  No resource found to remove
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+
+ERROR: script returned exit code 1
+Finished: FAILURE
